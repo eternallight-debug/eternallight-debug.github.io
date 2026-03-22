@@ -128,11 +128,34 @@
             margin-bottom: 20px;
             cursor: zoom-in; /* 提示可双击放大 */
             transition: cursor 0.2s ease;
+            display: none; /* 初始隐藏，加载完成后显示 */
+        }
+
+        /* 图片加载占位符 */
+        .img-loading-placeholder {
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2rem;
         }
 
         /* 文本样式 */
         .content-text {
             color: #333;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            display: none; /* 初始隐藏，加载完成后显示 */
+        }
+
+        /* 文本加载占位符 */
+        .text-loading-placeholder {
+            color: #999;
             font-size: 1.1rem;
             line-height: 1.7;
         }
@@ -228,7 +251,7 @@
                 max-width: 100%; /* 移动端占满宽度 */
             }
 
-            .content-img {
+            .content-img, .img-loading-placeholder {
                 height: 280px; /* 移动端图片高度适配 */
             }
 
@@ -295,7 +318,7 @@
             }
         };
 
-        // 2. 按钮点击事件：隐藏初始界面，加载并显示图文
+        // 2. 按钮点击事件：隐藏初始界面，逐个加载并显示图文
         document.getElementById('action-btn').addEventListener('click', async function() {
             const initialContainer = document.getElementById('initial-container');
             const loadingTip = document.getElementById('loading-tip');
@@ -309,13 +332,35 @@
             try {
                 // 清空原有图文内容
                 gallery.innerHTML = '';
-                // 循环加载图文（imageN.webp 对应 N.txt）
+                // 显示图文区域（先展示空容器）
+                gallery.classList.add('show');
+                
+                // 循环逐个加载图文（imageN.webp 对应 N.txt）
                 const maxItems = 10; // 最大加载数量，可按需调整
                 let hasContent = false;
 
                 for (let i = 1; i <= maxItems; i++) {
                     try {
-                        // 加载图片
+                        // 创建图文卡片（先显示加载占位符）
+                        const card = document.createElement('div');
+                        card.className = 'content-card';
+                        
+                        // 图片加载占位符
+                        const imgPlaceholder = document.createElement('div');
+                        imgPlaceholder.className = 'img-loading-placeholder';
+                        imgPlaceholder.textContent = `图片 ${i} 加载中...`;
+                        card.appendChild(imgPlaceholder);
+                        
+                        // 文本加载占位符
+                        const textPlaceholder = document.createElement('div');
+                        textPlaceholder.className = 'text-loading-placeholder';
+                        textPlaceholder.textContent = `正在加载图片 ${i} 对应的描述文本...`;
+                        card.appendChild(textPlaceholder);
+                        
+                        // 添加到画廊
+                        gallery.appendChild(card);
+
+                        // 加载图片（串行加载，等待当前图片加载完成）
                         const img = new Image();
                         img.src = `image${i}.webp`;
                         img.className = 'content-img';
@@ -324,48 +369,47 @@
                             img.onerror = reject;
                         });
 
-                        // 加载对应文本
+                        // 加载对应文本（等待文本加载完成）
                         const textRes = await fetch(`${i}.txt`);
                         const textContent = await textRes.text();
                         const textTrimmed = textContent.trim();
 
-                        // 创建图文卡片
-                        const card = document.createElement('div');
-                        card.className = 'content-card';
-                        card.appendChild(img);
-
+                        // 替换占位符为实际内容
+                        card.removeChild(imgPlaceholder);
+                        card.insertBefore(img, card.firstChild);
+                        
+                        card.removeChild(textPlaceholder);
                         const textDiv = document.createElement('div');
                         textDiv.className = 'content-text';
                         textDiv.textContent = textTrimmed;
                         card.appendChild(textDiv);
 
-                        // 添加到画廊
-                        gallery.appendChild(card);
-                        hasContent = true;
+                        // 显示加载完成的内容
+                        img.style.display = 'block';
+                        textDiv.style.display = 'block';
 
                         // 给图片绑定双击全屏事件
                         img.addEventListener('dblclick', function() {
                             showFullscreen(img.src, textTrimmed);
                         });
+
+                        hasContent = true;
                     } catch (err) {
                         // 某一组加载失败，说明无更多内容，停止循环
                         break;
                     }
                 }
 
-                // 隐藏加载提示，显示图文区域
+                // 隐藏整体加载提示
                 loadingTip.style.display = 'none';
-                if (hasContent) {
-                    gallery.classList.add('show');
-                } else {
-                    // 无图文内容时的提示
-                    gallery.classList.add('show');
+                
+                // 无图文内容时的提示
+                if (!hasContent) {
                     gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; color: #666;">暂无可用的图文内容</div>`;
                 }
             } catch (err) {
                 console.error('图文加载失败：', err);
                 loadingTip.style.display = 'none';
-                gallery.classList.add('show');
                 gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; color: #666;">加载失败，请检查文件是否存在</div>`;
             }
         });
