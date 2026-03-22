@@ -76,7 +76,7 @@
             background: white;
         }
 
-        /* 加载提示样式 */
+        /* 加载提示样式 - 关键修改：提高层级但不遮挡卡片，增加半透明背景 */
         .loading {
             position: fixed;
             top: 50%;
@@ -85,7 +85,11 @@
             color: white;
             font-size: 1.5rem;
             display: none;
-            z-index: 90;
+            z-index: 100; /* 高于卡片但不影响交互 */
+            background: rgba(0, 0, 0, 0.7); /* 半透明背景，更醒目且不穿透 */
+            padding: 20px 40px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
         }
 
         /* 图文展示区域（默认隐藏，点击后显示）- 改为单列布局 */
@@ -99,6 +103,7 @@
             background-color: #f8f9fa;
             max-width: 800px; /* 限制最大宽度，优化单列视觉 */
             margin: 0 auto; /* 居中显示 */
+            position: relative; /* 新增：作为加载提示的参考 */
         }
 
         /* 图文展示区域显示状态 */
@@ -113,6 +118,8 @@
             padding: 25px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             transition: transform 0.3s ease;
+            position: relative; /* 新增：确保卡片在加载提示下方但可交互 */
+            z-index: 10; /* 低于加载提示 */
         }
 
         .content-card:hover {
@@ -266,6 +273,11 @@
             .fullscreen-text {
                 font-size: 0.9rem;
             }
+
+            .loading {
+                font-size: 1.2rem;
+                padding: 15px 30px;
+            }
         }
     </style>
 </head>
@@ -340,7 +352,39 @@
                 let hasContent = false;
 
                 for (let i = 1; i <= maxItems; i++) {
+                    // 先预检查图片和文本是否存在，避免创建空卡片
+                    let imgExists = false;
+                    let textExists = false;
+                    let textContent = '';
+
+                    // 检查图片是否存在
                     try {
+                        const imgTest = new Image();
+                        await new Promise((resolve, reject) => {
+                            imgTest.onload = () => { imgExists = true; resolve(); };
+                            imgTest.onerror = reject;
+                            imgTest.src = `image${i}.webp`;
+                        });
+                    } catch (err) {
+                        // 图片不存在，直接跳过当前i，不创建卡片
+                        continue;
+                    }
+
+                    // 检查文本是否存在
+                    try {
+                        const textRes = await fetch(`${i}.txt`);
+                        if (textRes.ok) {
+                            textContent = await textRes.text();
+                            textContent = textContent.trim();
+                            textExists = true;
+                        }
+                    } catch (err) {
+                        // 文本不存在，直接跳过当前i，不创建卡片
+                        continue;
+                    }
+
+                    // 只有图片和文本都存在时，才创建卡片
+                    if (imgExists && textExists) {
                         // 创建图文卡片（先显示加载占位符）
                         const card = document.createElement('div');
                         card.className = 'content-card';
@@ -364,15 +408,10 @@
                         const img = new Image();
                         img.src = `image${i}.webp`;
                         img.className = 'content-img';
-                        await new Promise((resolve, reject) => {
+                        await new Promise((resolve) => {
                             img.onload = resolve;
-                            img.onerror = reject;
+                            // 图片加载失败的情况已在预检查排除，无需处理error
                         });
-
-                        // 加载对应文本（等待文本加载完成）
-                        const textRes = await fetch(`${i}.txt`);
-                        const textContent = await textRes.text();
-                        const textTrimmed = textContent.trim();
 
                         // 替换占位符为实际内容
                         card.removeChild(imgPlaceholder);
@@ -381,7 +420,7 @@
                         card.removeChild(textPlaceholder);
                         const textDiv = document.createElement('div');
                         textDiv.className = 'content-text';
-                        textDiv.textContent = textTrimmed;
+                        textDiv.textContent = textContent;
                         card.appendChild(textDiv);
 
                         // 显示加载完成的内容
@@ -390,13 +429,10 @@
 
                         // 给图片绑定双击全屏事件
                         img.addEventListener('dblclick', function() {
-                            showFullscreen(img.src, textTrimmed);
+                            showFullscreen(img.src, textContent);
                         });
 
                         hasContent = true;
-                    } catch (err) {
-                        // 某一组加载失败，说明无更多内容，停止循环
-                        break;
                     }
                 }
 
