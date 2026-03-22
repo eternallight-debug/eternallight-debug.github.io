@@ -3,96 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eternallight.dpdns.org</title>
+    <title>内容页</title>
     <style>
-        /* 全局样式 */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            font-family: "Microsoft YaHei", sans-serif;
-            background: linear-gradient(135deg, #c94b4b, #4b134f);
-            background-attachment: fixed;
-            color: white;
-            text-align: center;
-            padding-bottom: 50px;
-        }
-
-        /* 顶部标题 */
-        header { padding: 60px 20px 20px; }
-        header h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px #ffcc00;
-        }
-        header p { font-size: 1.2rem; opacity: 0.9; }
-
-        /* 马年装饰 */
-        .horse-decoration {
-            font-size: 8rem;
-            margin: 20px 0;
-            animation: jump 2s infinite ease-in-out;
-        }
-        @keyframes jump {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        /* 祝福卡片 */
-        .wish-container {
             max-width: 800px;
-            margin: 0 auto;
+            margin: 40px auto;
             padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7;
+            font-size: 16px;
+            color: #333;
+            background: #fff;
         }
-        .wish-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s;
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #222;
         }
-        .wish-card:hover { transform: scale(1.05); }
-        .wish-card h3 {
-            color: #ffcc00;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
+        .image {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            object-fit: cover;
         }
-
-        /* 底部信息 */
-        footer {
-            margin-top: 50px;
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .content {
+            white-space: pre-wrap;
+            text-align: justify;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>🐎 2026 马年大吉</h1>
-        <p>eternallight.dpdns.org | 祝您马到成功</p>
-    </header>
 
-    <div class="horse-decoration">🐎</div>
+    <h1 class="title" id="title">加载中...</h1>
+    <img class="image" id="img" alt="插图">
+    <div class="content" id="text">正在读取内容...</div>
 
-    <div class="wish-container">
-        <div class="wish-card">
-            <h3>一马当先</h3>
-            <p>新的一年，愿您事业一马当先，前程似锦，步步高升！</p>
-        </div>
-        <div class="wish-card">
-            <h3>龙马精神</h3>
-            <p>身体硬朗，活力满满，无病无灾，岁岁平安。</p>
-        </div>
-        <div class="wish-card">
-            <h3>财源广进</h3>
-            <p>马年行大运，财运亨通，口袋满满，福气连连。</p>
-        </div>
-    </div>
+    <script>
+        // 1. 读取标题 0.txt
+        fetch('0.txt')
+            .then(res => res.text())
+            .then(text => {
+                document.getElementById('title').textContent = text.trim();
+            })
+            .catch(() => {
+                document.getElementById('title').textContent = '标题加载失败';
+            });
 
-    <footer>
-        <p>© 2026 eternallight.dpdns.org |  Powered by GitHub Pages</p>
-    </footer>
+        // 2. 读取正文 1.txt
+        fetch('1.txt')
+            .then(res => res.text())
+            .then(text => {
+                document.getElementById('text').textContent = text;
+            })
+            .catch(() => {
+                document.getElementById('text').textContent = '正文加载失败';
+            });
+
+        // 3. 自动加载图片（支持常见格式）
+        const img = document.getElementById('img');
+        const exts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        let tried = 0;
+
+        function tryImage(ext) {
+            const temp = new Image();
+            temp.onload = () => { img.src = `image.${ext}`; };
+            temp.onerror = () => {
+                tried++;
+                if (tried < exts.length) tryImage(exts[tried]);
+                else img.style.display = 'none';
+            };
+            temp.src = `image.${ext}`;
+        }
+
+        tryImage(exts[0]);
+    </script>
 </body>
 </html>
