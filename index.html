@@ -11,78 +11,126 @@
             box-sizing: border-box;
         }
         body {
-            max-width: 800px;
+            max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.7;
-            font-size: 16px;
+            line-height: 1.8;
             color: #333;
-            background: #fff;
+            background: #f8f9fa;
         }
         .title {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 20px;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 30px;
             text-align: center;
             color: #222;
         }
-        .image {
+        .item {
+            margin-bottom: 40px;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .item img {
             width: 100%;
-            border-radius: 8px;
-            margin-bottom: 24px;
+            height: auto;
+            display: block;
             object-fit: cover;
         }
-        .content {
+        .item .text {
+            padding: 20px 24px;
             white-space: pre-wrap;
-            text-align: justify;
+            font-size: 16px;
+            color: #444;
+        }
+        .error {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
         }
     </style>
 </head>
 <body>
-
     <h1 class="title" id="title">加载中...</h1>
-    <img class="image" id="img" alt="插图">
-    <div class="content" id="text">正在读取内容...</div>
+    <div id="container"></div>
 
     <script>
-        // 1. 读取标题 0.txt
+        // 配置：最多支持多少组图片+文本
+        const maxItems = 10;
+        const container = document.getElementById('container');
+        const titleEl = document.getElementById('title');
+
+        // 1. 先加载标题 0.txt
         fetch('0.txt')
             .then(res => res.text())
             .then(text => {
-                document.getElementById('title').textContent = text.trim();
+                titleEl.textContent = text.trim() || '无标题';
             })
             .catch(() => {
-                document.getElementById('title').textContent = '标题加载失败';
+                titleEl.textContent = '标题加载失败';
             });
 
-        // 2. 读取正文 1.txt
-        fetch('1.txt')
-            .then(res => res.text())
-            .then(text => {
-                document.getElementById('text').textContent = text;
-            })
-            .catch(() => {
-                document.getElementById('text').textContent = '正文加载失败';
-            });
+        // 2. 支持的图片格式
+        const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
-        // 3. 自动加载图片（支持常见格式）
-        const img = document.getElementById('img');
-        const exts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        let tried = 0;
+        // 3. 循环加载 image1 + 1.txt, image2 + 2.txt ...
+        async function loadItems() {
+            for (let i = 1; i <= maxItems; i++) {
+                let imgSrc = null;
 
-        function tryImage(ext) {
-            const temp = new Image();
-            temp.onload = () => { img.src = `image.${ext}`; };
-            temp.onerror = () => {
-                tried++;
-                if (tried < exts.length) tryImage(exts[tried]);
-                else img.style.display = 'none';
-            };
-            temp.src = `image.${ext}`;
+                // 尝试找到存在的图片
+                for (const ext of imgExts) {
+                    const testImg = new Image();
+                    try {
+                        await new Promise((resolve, reject) => {
+                            testImg.onload = resolve;
+                            testImg.onerror = reject;
+                            testImg.src = `image${i}.${ext}`;
+                        });
+                        imgSrc = `image${i}.${ext}`;
+                        break;
+                    } catch (e) {}
+                }
+
+                // 尝试加载对应文本
+                let textContent = '';
+                try {
+                    const res = await fetch(`${i}.txt`);
+                    textContent = await res.text();
+                } catch (e) {
+                    textContent = '（文本加载失败）';
+                }
+
+                // 只要有图片或文本，就渲染这一项
+                if (imgSrc || textContent.trim()) {
+                    const item = document.createElement('div');
+                    item.className = 'item';
+
+                    if (imgSrc) {
+                        const img = document.createElement('img');
+                        img.src = imgSrc;
+                        img.alt = `插图 ${i}`;
+                        item.appendChild(img);
+                    }
+
+                    if (textContent.trim()) {
+                        const text = document.createElement('div');
+                        text.className = 'text';
+                        text.textContent = textContent;
+                        item.appendChild(text);
+                    }
+
+                    container.appendChild(item);
+                } else {
+                    // 没有图片也没有文本，认为到了最后一组
+                    break;
+                }
+            }
         }
 
-        tryImage(exts[0]);
+        loadItems();
     </script>
 </body>
 </html>
