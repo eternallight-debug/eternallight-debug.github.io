@@ -3,134 +3,417 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>内容页</title>
+    <title>全屏初始界面 + 点击展示图文</title>
     <style>
+        /* 全局重置 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
         }
-        body {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 20px;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.8;
-            color: #333;
-            background: #f8f9fa;
-        }
-        .title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 30px;
-            text-align: center;
-            color: #222;
-        }
-        .item {
-            margin-bottom: 40px;
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        }
-        .item img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
-        }
-        .item .text {
-            padding: 20px 24px;
-            white-space: pre-wrap;
-            font-size: 16px;
-            color: #444;
-        }
-        .error {
-            color: #dc3545;
-            text-align: center;
+
+        /* 初始全屏容器样式（核心：占满整个屏幕） */
+        .initial-container {
+            position: fixed; /* 固定定位，占满屏幕 */
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
+            z-index: 100; /* 保证在最上层 */
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        /* 点击后隐藏初始容器 */
+        .initial-container.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none; /* 禁止点击 */
+        }
+
+        /* 主标题样式 */
+        #main-title {
+            color: white;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 介绍文本样式 */
+        #introduction {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            line-height: 1.8;
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        /* 按钮样式 */
+        #action-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        #action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            background: white;
+        }
+
+        /* 加载提示样式 */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5rem;
+            display: none;
+            z-index: 90;
+        }
+
+        /* 图文展示区域（默认隐藏，点击后显示）- 改为单列布局 */
+        .content-gallery {
+            display: none; /* 默认隐藏 */
+            grid-template-columns: 1fr; /* 强制单列 */
+            gap: 30px;
+            width: 100%;
+            min-height: 100vh;
+            padding: 40px 20px;
+            background-color: #f8f9fa;
+            max-width: 800px; /* 限制最大宽度，优化单列视觉 */
+            margin: 0 auto; /* 居中显示 */
+        }
+
+        /* 图文展示区域显示状态 */
+        .content-gallery.show {
+            display: grid;
+        }
+
+        /* 单组图文卡片 */
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .content-card:hover {
+            transform: translateY(-8px);
+        }
+
+        /* 图片样式 */
+        .content-img {
+            width: 100%;
+            height: 400px; /* 单列布局增大图片高度 */
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            cursor: zoom-in; /* 提示可双击放大 */
+            transition: cursor 0.2s ease;
+        }
+
+        /* 文本样式 */
+        .content-text {
+            color: #333;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        /* 图片全屏展示容器 */
+        .img-fullscreen-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* 全屏图片样式 */
+        .fullscreen-img {
+            max-width: 95%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        /* 全屏底部介绍文本容器 */
+        .fullscreen-text-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px; /* 只占一小部分高度 */
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            overflow: hidden;
+            transition: height 0.3s ease;
+            cursor: default;
+        }
+
+        /* 鼠标悬停时展开文本区域 */
+        .fullscreen-text-container:hover {
+            height: 200px; /* 展开高度 */
+        }
+
+        /* 全屏文本内容 */
+        .fullscreen-text {
+            padding: 15px;
+            font-size: 1rem;
+            line-height: 1.6;
+            height: 100%;
+            overflow-y: auto; /* 内容超出时滚动 */
+        }
+
+        /* 关闭全屏按钮 */
+        .close-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .close-fullscreen:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            #main-title {
+                font-size: 2.2rem;
+            }
+
+            #introduction {
+                font-size: 1rem;
+                max-width: 90%;
+            }
+
+            #action-btn {
+                padding: 12px 30px;
+                font-size: 1rem;
+            }
+
+            .content-gallery {
+                padding: 20px 15px;
+                max-width: 100%; /* 移动端占满宽度 */
+            }
+
+            .content-img {
+                height: 280px; /* 移动端图片高度适配 */
+            }
+
+            .fullscreen-text-container {
+                height: 50px;
+            }
+
+            .fullscreen-text-container:hover {
+                height: 180px;
+            }
+
+            .fullscreen-text {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
-    <h1 class="title" id="title">加载中...</h1>
-    <div id="container"></div>
+    <!-- 初始全屏界面 -->
+    <div class="initial-container" id="initial-container">
+        <h1 id="main-title">加载中...</h1>
+        <p id="introduction">加载中...</p>
+        <button id="action-btn">加载中...</button>
+    </div>
+
+    <!-- 加载提示 -->
+    <div class="loading" id="loading-tip">正在加载图文内容...</div>
+
+    <!-- 图文展示区域 -->
+    <div class="content-gallery" id="content-gallery"></div>
+
+    <!-- 图片全屏展示容器 -->
+    <div class="img-fullscreen-container" id="img-fullscreen-container">
+        <button class="close-fullscreen" id="close-fullscreen">×</button>
+        <img src="" alt="全屏图片" class="fullscreen-img" id="fullscreen-img">
+        <div class="fullscreen-text-container" id="fullscreen-text-container">
+            <div class="fullscreen-text" id="fullscreen-text"></div>
+        </div>
+    </div>
 
     <script>
-        // 配置：最多支持多少组图片+文本
-        const maxItems = 10;
-        const container = document.getElementById('container');
-        const titleEl = document.getElementById('title');
+        // 1. 初始化：读取文本文件填充初始界面
+        window.onload = async function() {
+            try {
+                // 读取标题
+                const titleRes = await fetch('title.txt');
+                const titleText = await titleRes.text();
+                document.getElementById('main-title').textContent = titleText.trim();
 
-        // 1. 先加载标题 0.txt
-        fetch('0.txt')
-            .then(res => res.text())
-            .then(text => {
-                titleEl.textContent = text.trim() || '无标题';
-            })
-            .catch(() => {
-                titleEl.textContent = '标题加载失败';
-            });
+                // 读取介绍
+                const introRes = await fetch('introduction.txt');
+                const introText = await introRes.text();
+                document.getElementById('introduction').textContent = introText.trim();
 
-        // 2. 支持的图片格式
-        const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-
-        // 3. 循环加载 image1 + 1.txt, image2 + 2.txt ...
-        async function loadItems() {
-            for (let i = 1; i <= maxItems; i++) {
-                let imgSrc = null;
-
-                // 尝试找到存在的图片
-                for (const ext of imgExts) {
-                    const testImg = new Image();
-                    try {
-                        await new Promise((resolve, reject) => {
-                            testImg.onload = resolve;
-                            testImg.onerror = reject;
-                            testImg.src = `image${i}.${ext}`;
-                        });
-                        imgSrc = `image${i}.${ext}`;
-                        break;
-                    } catch (e) {}
-                }
-
-                // 尝试加载对应文本
-                let textContent = '';
-                try {
-                    const res = await fetch(`${i}.txt`);
-                    textContent = await res.text();
-                } catch (e) {
-                    textContent = '（文本加载失败）';
-                }
-
-                // 只要有图片或文本，就渲染这一项
-                if (imgSrc || textContent.trim()) {
-                    const item = document.createElement('div');
-                    item.className = 'item';
-
-                    if (imgSrc) {
-                        const img = document.createElement('img');
-                        img.src = imgSrc;
-                        img.alt = `插图 ${i}`;
-                        item.appendChild(img);
-                    }
-
-                    if (textContent.trim()) {
-                        const text = document.createElement('div');
-                        text.className = 'text';
-                        text.textContent = textContent;
-                        item.appendChild(text);
-                    }
-
-                    container.appendChild(item);
-                } else {
-                    // 没有图片也没有文本，认为到了最后一组
-                    break;
-                }
+                // 读取按钮文本
+                const btnRes = await fetch('button.txt');
+                const btnText = await btnRes.text();
+                document.getElementById('action-btn').textContent = btnText.trim();
+            } catch (err) {
+                console.error('基础文本加载失败：', err);
+                document.getElementById('main-title').textContent = '主标题';
+                document.getElementById('introduction').textContent = '这里是介绍文本，可修改introduction.txt文件内容';
+                document.getElementById('action-btn').textContent = '点击查看内容';
             }
+        };
+
+        // 2. 按钮点击事件：隐藏初始界面，加载并显示图文
+        document.getElementById('action-btn').addEventListener('click', async function() {
+            const initialContainer = document.getElementById('initial-container');
+            const loadingTip = document.getElementById('loading-tip');
+            const gallery = document.getElementById('content-gallery');
+
+            // 显示加载提示
+            loadingTip.style.display = 'block';
+            // 隐藏初始界面（加过渡动画）
+            initialContainer.classList.add('hidden');
+
+            try {
+                // 清空原有图文内容
+                gallery.innerHTML = '';
+                // 循环加载图文（imageN.webp 对应 N.txt）
+                const maxItems = 10; // 最大加载数量，可按需调整
+                let hasContent = false;
+
+                for (let i = 1; i <= maxItems; i++) {
+                    try {
+                        // 加载图片
+                        const img = new Image();
+                        img.src = `image${i}.webp`;
+                        img.className = 'content-img';
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = reject;
+                        });
+
+                        // 加载对应文本
+                        const textRes = await fetch(`${i}.txt`);
+                        const textContent = await textRes.text();
+                        const textTrimmed = textContent.trim();
+
+                        // 创建图文卡片
+                        const card = document.createElement('div');
+                        card.className = 'content-card';
+                        card.appendChild(img);
+
+                        const textDiv = document.createElement('div');
+                        textDiv.className = 'content-text';
+                        textDiv.textContent = textTrimmed;
+                        card.appendChild(textDiv);
+
+                        // 添加到画廊
+                        gallery.appendChild(card);
+                        hasContent = true;
+
+                        // 给图片绑定双击全屏事件
+                        img.addEventListener('dblclick', function() {
+                            showFullscreen(img.src, textTrimmed);
+                        });
+                    } catch (err) {
+                        // 某一组加载失败，说明无更多内容，停止循环
+                        break;
+                    }
+                }
+
+                // 隐藏加载提示，显示图文区域
+                loadingTip.style.display = 'none';
+                if (hasContent) {
+                    gallery.classList.add('show');
+                } else {
+                    // 无图文内容时的提示
+                    gallery.classList.add('show');
+                    gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; color: #666;">暂无可用的图文内容</div>`;
+                }
+            } catch (err) {
+                console.error('图文加载失败：', err);
+                loadingTip.style.display = 'none';
+                gallery.classList.add('show');
+                gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; color: #666;">加载失败，请检查文件是否存在</div>`;
+            }
+        });
+
+        // 3. 全屏展示图片函数
+        function showFullscreen(imgSrc, textContent) {
+            const fullscreenContainer = document.getElementById('img-fullscreen-container');
+            const fullscreenImg = document.getElementById('fullscreen-img');
+            const fullscreenText = document.getElementById('fullscreen-text');
+            
+            // 设置全屏图片和文本
+            fullscreenImg.src = imgSrc;
+            fullscreenText.textContent = textContent;
+            
+            // 显示全屏容器
+            fullscreenContainer.style.display = 'flex';
+            
+            // 禁止页面滚动
+            document.body.style.overflow = 'hidden';
         }
 
-        loadItems();
+        // 4. 关闭全屏事件
+        document.getElementById('close-fullscreen').addEventListener('click', function() {
+            const fullscreenContainer = document.getElementById('img-fullscreen-container');
+            fullscreenContainer.style.display = 'none';
+            
+            // 恢复页面滚动
+            document.body.style.overflow = 'auto';
+        });
+
+        // 5. 点击全屏容器空白处关闭（可选）
+        document.getElementById('img-fullscreen-container').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // 6. ESC键关闭全屏
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const fullscreenContainer = document.getElementById('img-fullscreen-container');
+                if (fullscreenContainer.style.display === 'flex') {
+                    fullscreenContainer.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        });
     </script>
 </body>
 </html>
