@@ -2,81 +2,75 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>暗区突围联动活动官网</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>红包抽奖活动</title>
     <style>
-        /* 全局重置 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "Microsoft Yahei", sans-serif;
         }
 
-        /* 初始全屏容器样式（核心：占满整个屏幕） */
-        .initial-container {
-            position: fixed; /* 固定定位，占满屏幕 */
-            top: 0;
-            left: 0;
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background-color: #000; /* 图片短边背景设为黑色，适配视觉 */
+            overflow-x: hidden;
+        }
+
+        /* 图片核心样式：完整显示+长边全屏，无裁剪！ */
+        .fullscreen-img-wrap {
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            z-index: 100; /* 保证在最上层 */
-            transition: opacity 0.5s ease, visibility 0.5s ease;
+            background-color: #000; /* 图片短边补黑色背景，和图片融合 */
+        }
+        .fullscreen-img {
+            max-width: 100vw; /* 宽度不超过屏幕 */
+            max-height: 100vh; /* 高度不超过屏幕 */
+            object-fit: contain; /* 核心：完整显示图片，长边撑满，短边留白（补背景） */
+        }
+        .img-placeholder {
+            width: 100vw;
+            height: 100vh;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.2rem;
+            position: relative;
+            z-index: 10;
         }
 
-        /* 点击后隐藏初始容器 */
-        .initial-container.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none; /* 禁止点击 */
-        }
-
-        /* 主标题样式 */
-        #main-title {
+        /* 了解更多按钮 - 悬浮在第四张图底部，半透明背景更醒目 */
+        .more-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99;
+            padding: 12px 40px;
+            background-color: #d43c33;
             color: white;
-            font-size: 3rem;
-            margin-bottom: 20px;
-            text-align: center;
-            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* 介绍文本样式 */
-        #introduction {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 1.2rem;
-            line-height: 1.8;
-            max-width: 800px;
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        /* 按钮样式 */
-        #action-btn {
-            background: rgba(255, 255, 255, 0.9);
-            color: #667eea;
             border: none;
-            padding: 15px 40px;
-            border-radius: 8px;
-            font-size: 1.2rem;
+            border-radius: 25px;
+            font-size: 18px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .more-btn:hover {
+            background-color: #b72828;
+            transform: translateX(-50%) translateY(-3px);
+        }
+        .more-btn.hidden {
+            display: none;
         }
 
-        #action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            background: white;
-        }
-
-        /* 加载提示样式 - 关键修改：提高层级但不遮挡卡片，增加半透明背景 */
+        /* 加载提示 */
         .loading {
             position: fixed;
             top: 50%;
@@ -84,414 +78,454 @@
             transform: translate(-50%, -50%);
             color: white;
             font-size: 1.5rem;
-            display: none;
-            z-index: 100; /* 高于卡片但不影响交互 */
-            background: rgba(0, 0, 0, 0.7); /* 半透明背景，更醒目且不穿透 */
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
             padding: 20px 40px;
             border-radius: 8px;
             backdrop-filter: blur(4px);
         }
 
-        /* 图文展示区域（默认隐藏，点击后显示）- 改为单列布局 */
-        .content-gallery {
-            display: none; /* 默认隐藏 */
-            grid-template-columns: 1fr; /* 强制单列 */
-            gap: 30px;
+        /* 抽奖区域 - 单列居中，白色背景和图片区区分 */
+        .lottery-section {
             width: 100%;
-            min-height: 100vh;
-            padding: 40px 20px;
-            background-color: #f8f9fa;
-            max-width: 800px; /* 限制最大宽度，优化单列视觉 */
-            margin: 0 auto; /* 居中显示 */
-            position: relative; /* 新增：作为加载提示的参考 */
-        }
-
-        /* 图文展示区域显示状态 */
-        .content-gallery.show {
-            display: grid;
-        }
-
-        /* 单组图文卡片 */
-        .content-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease;
-            position: relative; /* 新增：确保卡片在加载提示下方但可交互 */
-            z-index: 10; /* 低于加载提示 */
-        }
-
-        .content-card:hover {
-            transform: translateY(-8px);
-        }
-
-        /* 图片样式 */
-        .content-img {
-            width: 100%;
-            height: 400px; /* 单列布局增大图片高度 */
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            cursor: zoom-in; /* 提示可双击放大 */
-            transition: cursor 0.2s ease;
-            display: none; /* 初始隐藏，加载完成后显示 */
-        }
-
-        /* 图片加载占位符 */
-        .img-loading-placeholder {
-            width: 100%;
-            height: 400px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            background: #e9ecef;
-            display: flex;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 50px 20px;
+            display: none;
+            flex-direction: column;
             align-items: center;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        .lottery-section.show {
+            display: flex;
+        }
+        h1 {
+            color: #d43c33;
+            margin-bottom: 20px;
+            font-size: 28px;
+            text-align: center;
+        }
+        .chance-tip {
+            color: #d43c33;
+            font-size: 18px;
+            margin-bottom: 30px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 红包容器 - 16个红包4列布局，适配移动端 */
+        .red-packet-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            perspective: 1000px;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+        .packet-card {
+            width: 100%;
+            aspect-ratio: 3/4; /* 固定红包宽高比，适配所有屏幕 */
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+            cursor: pointer;
+        }
+        .packet-card.flipped {
+            transform: rotateY(180deg);
+            cursor: not-allowed;
+        }
+        .packet-card.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* 红包正反面样式 */
+        .packet-front, .packet-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
             justify-content: center;
-            color: #666;
-            font-size: 1.2rem;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .packet-front {
+            background: linear-gradient(135deg, #e62e4d, #d43c33);
+            color: white;
+            font-size: 5vw;
+            font-weight: bold;
+            border: 2px solid #c22539;
+        }
+        .packet-back {
+            background: linear-gradient(135deg, #fff8e1, #fff3cd);
+            color: #d43c33;
+            font-size: 3vw;
+            font-weight: bold;
+            transform: rotateY(180deg);
+            border: 2px solid #ffc107;
+            padding: 5px;
+            text-align: center;
+            word-break: break-all;
         }
 
-        /* 文本样式 */
-        .content-text {
+        /* 活动文本说明 - 抽奖区底部 */
+        .text-content {
+            width: 100%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             color: #333;
-            font-size: 1.1rem;
-            line-height: 1.7;
-            display: none; /* 初始隐藏，加载完成后显示 */
+            line-height: 1.8;
+            font-size: 16px;
+            margin-top: 20px;
         }
 
-        /* 文本加载占位符 */
-        .text-loading-placeholder {
-            color: #999;
-            font-size: 1.1rem;
-            line-height: 1.7;
-        }
-
-        /* 图片全屏展示容器 */
-        .img-fullscreen-container {
+        /* 奖励弹窗 */
+        .modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.95);
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
             z-index: 200;
-            display: none;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             padding: 20px;
         }
-
-        /* 全屏图片样式 */
-        .fullscreen-img {
-            max-width: 95%;
-            max-height: 90%;
-            object-fit: contain;
-        }
-
-        /* 全屏底部介绍文本容器 */
-        .fullscreen-text-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
             width: 100%;
-            height: 60px; /* 只占一小部分高度 */
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            overflow: hidden;
-            transition: height 0.3s ease;
-            cursor: default;
         }
-
-        /* 鼠标悬停时展开文本区域 */
-        .fullscreen-text-container:hover {
-            height: 200px; /* 展开高度 */
+        .modal h2 {
+            color: #d43c33;
+            margin-bottom: 15px;
+            font-size: 24px;
         }
-
-        /* 全屏文本内容 */
-        .fullscreen-text {
-            padding: 15px;
-            font-size: 1rem;
+        .modal p {
+            color: #666;
             line-height: 1.6;
-            height: 100%;
-            overflow-y: auto; /* 内容超出时滚动 */
+            margin-bottom: 20px;
         }
-
-        /* 关闭全屏按钮 */
-        .close-fullscreen {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        .modal-code {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d43c33;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fff8e1;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+        .modal-btn {
+            padding: 8px 25px;
+            background-color: #d43c33;
             color: white;
-            background: rgba(255, 255, 255, 0.2);
             border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.2rem;
+            border-radius: 5px;
+            font-size: 16px;
             cursor: pointer;
-            transition: background 0.3s ease;
+            margin-top: 10px;
         }
 
-        .close-fullscreen:hover {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        /* 响应式适配 */
+        /* 响应式适配 - 移动端红包2列布局 */
         @media (max-width: 768px) {
-            #main-title {
-                font-size: 2.2rem;
+            .red-packet-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
             }
-
-            #introduction {
-                font-size: 1rem;
-                max-width: 90%;
+            .packet-front {
+                font-size: 8vw;
             }
-
-            #action-btn {
-                padding: 12px 30px;
-                font-size: 1rem;
+            .packet-back {
+                font-size: 5vw;
             }
-
-            .content-gallery {
-                padding: 20px 15px;
-                max-width: 100%; /* 移动端占满宽度 */
+            .more-btn {
+                padding: 10px 30px;
+                font-size: 16px;
+                bottom: 20px;
             }
-
-            .content-img, .img-loading-placeholder {
-                height: 280px; /* 移动端图片高度适配 */
-            }
-
-            .fullscreen-text-container {
-                height: 50px;
-            }
-
-            .fullscreen-text-container:hover {
-                height: 180px;
-            }
-
-            .fullscreen-text {
-                font-size: 0.9rem;
-            }
-
             .loading {
                 font-size: 1.2rem;
                 padding: 15px 30px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            .chance-tip {
+                font-size: 16px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- 初始全屏界面 -->
-    <div class="initial-container" id="initial-container">
-        <h1 id="main-title">加载中...</h1>
-        <p id="introduction">加载中...</p>
-        <button id="action-btn">加载中...</button>
+    <!-- 4张全屏图片区 - 单列纵向排列，下拉滚动 -->
+    <div id="imgContainer">
+        <!-- 图片由JS动态生成 -->
     </div>
 
+    <!-- 悬浮按钮：点击此处了解更多 -->
+    <button class="more-btn" id="moreBtn">点击此处了解更多</button>
+
     <!-- 加载提示 -->
-    <div class="loading" id="loading-tip">正在加载图文内容...</div>
+    <div class="loading" id="loadingTip">正在加载图片内容...</div>
 
-    <!-- 图文展示区域 -->
-    <div class="content-gallery" id="content-gallery"></div>
+    <!-- 抽奖区域 - 向下滚动至图片区底部后显示 -->
+    <div class="lottery-section" id="lotterySection">
+        <h1>先锋！僵尸来袭，卡莫纳惊喜不断</h1>
+        <div class="chance-tip" id="chanceTip">剩余抽奖次数：5</div>
+        <!-- 16个红包容器 -->
+        <div class="red-packet-container" id="packetContainer"></div>
+        <!-- 活动文本说明 -->
+        <div class="text-content" id="textContent">欢迎参与本次红包抽奖活动！
+活动规则：
+1. 每人拥有5次免费抽奖机会，点击红包即可开奖
+2. 每次开奖将按顺序展示专属奖励，抽完为止
 
-    <!-- 图片全屏展示容器 -->
-    <div class="img-fullscreen-container" id="img-fullscreen-container">
-        <button class="close-fullscreen" id="close-fullscreen">×</button>
-        <img src="" alt="全屏图片" class="fullscreen-img" id="fullscreen-img">
-        <div class="fullscreen-text-container" id="fullscreen-text-container">
-            <div class="fullscreen-text" id="fullscreen-text"></div>
+ 
+为感谢各位先锋长期以来的支持与陪伴，《暗区突围》特开启「春日突围幸运抽」限时福利活动，活动期间每位玩家可获得5次免费抽奖机会，赢取限定大金、联动道具、游戏道具及现金红包等丰厚奖励，助力先锋们在暗区战场中所向披靡！
+  
+- 活动开启时间：2026年3月23日 00:00
+- 抽奖截止时间：2026年4月2日 23:59
+- 奖励兑换/领取截止时间：2026年4月5日 23:59
+ 
+温馨提示：请各位先锋务必在4月2日23:59前完成抽奖操作，逾期未使用的抽奖次数将自动清零，无法补抽；奖励请在4月5日23:59前完成领取，超时未领取将视为自动放弃。
+
+
+ 
+本次活动奖励涵盖游戏内核心道具、限定外观及联动好物，具体包括：
+ 
+- 顶级大奖：暗区×植物大战僵尸联动限定大金（如「阳光金箱」「豌豆射手战术罐」）、价值1000元现金红包、限定枪械皮肤「战术绿豌豆M4A1」；
+- 高级奖励：高级物资箱、6级甲自选包、7.62mm子弹礼包、联动角色装扮「僵尸特战服」；
+- 基础奖励：科恩币*10万、医疗包礼包、武器零件箱、经验加成卡（24小时）等实用道具。
+ 
+所有奖励均为随机发放，概率公平透明，每位玩家都有机会抽取顶级大奖！
+ 
+ 
+1. 资格限制：仅限账号等级≥10级的玩家参与，每个游戏账号仅可参与1次活动，不可多账号重复参与；
+2. 次数规则：活动期间固定发放5次抽奖机会，不可累积、不可转让、不可交易，逾期未使用将自动失效；
+3. 奖励发放：
+- 游戏道具类奖励将在抽取后10分钟内发放至游戏内邮箱，请注意查收；
+- 现金红包类奖励需完成抖音账号实名认证后，通过活动页面「我的奖品」提现至抖音支付，提现截止时间为2026年4月17日23:59，逾期未提现视为自动放弃；
+- 限定皮肤/装扮类奖励将直接发放至游戏内仓库，可在「外观」界面查看使用；
+4. 违规处理：若发现玩家存在刷号、作弊等违规行为，官方将立即取消其活动资格，收回已发放奖励，并保留追究法律责任的权利；
+5. 活动调整：在法律允许范围内，官方有权根据实际情况对活动时间、奖励内容、参与规则等进行调整，调整信息将通过游戏内公告提前告知。
+ 
+常见问题
+ 
+1. Q：为什么我进入活动后没有看到抽奖机会？
+A：请确认账号等级是否≥10级，若等级达标仍未显示，可尝试重启游戏客户端或联系客服反馈。
+2. Q：抽中现金红包后多久可以提现？
+A：现金红包将实时发放至「我的奖品」，完成实名认证后即可发起提现，一般1-3个工作日到账。
+3. Q：4月2日之后还能领取奖励吗？
+A：抽奖操作必须在4月2日23:59前完成，奖励领取可延长至4月5日23:59，超时未领取将无法获取。
+ 
+客服支持
+ 
+若您在活动参与过程中遇到任何问题，可通过游戏内「设置-帮助与反馈」或官方客服渠道联系我们，我们将竭诚为您服务！
+ 
+ 
+
+5. 本次活动最终解释权归主办方所有</div>
+    </div>
+
+    <!-- 奖励弹窗 -->
+    <div class="modal" id="rewardModal">
+        <div class="modal-content">
+            <h2>恭喜获得奖励！</h2>
+            <p>请在游戏内输入兑换码获得奖励，兑换一次后失效</p>
+            <div class="modal-code">ugvvguy3424-bjhgv33453j-2323j</div>
+            <button class="modal-btn" id="modalBtn">确认</button>
         </div>
     </div>
 
     <script>
-        // 1. 初始化：读取文本文件填充初始界面
-        window.onload = async function() {
+        // DOM元素获取
+        const imgContainer = document.getElementById('imgContainer');
+        const moreBtn = document.getElementById('moreBtn');
+        const lotterySection = document.getElementById('lotterySection');
+        const packetContainer = document.getElementById('packetContainer');
+        const chanceTip = document.getElementById('chanceTip');
+        const rewardModal = document.getElementById('rewardModal');
+        const modalBtn = document.getElementById('modalBtn');
+        const loadingTip = document.getElementById('loadingTip');
+
+        // 全局变量
+        let remainingChances = 5; // 剩余抽奖次数
+        let packetTexts = [       // 5行开奖文本，按点击顺序展示
+            "科恩币X8888",
+            "科恩币X66666",
+            "60发SNB 7.62x51",
+            "戒指x3",
+            "机密文件"
+        ];
+        let clickIndex = 0;       // 点击顺序索引
+
+        // 核心函数：加载.webp图片（预加载+校验+占位符，解决读取失败）
+        async function loadImage(imgSrc, placeholderEl, imgEl) {
             try {
-                // 读取标题
-                const titleRes = await fetch('title.txt');
-                const titleText = await titleRes.text();
-                document.getElementById('main-title').textContent = titleText.trim();
-
-                // 读取介绍
-                const introRes = await fetch('introduction.txt');
-                const introText = await introRes.text();
-                document.getElementById('introduction').textContent = introText.trim();
-
-                // 读取按钮文本
-                const btnRes = await fetch('button.txt');
-                const btnText = await btnRes.text();
-                document.getElementById('action-btn').textContent = btnText.trim();
+                const img = new Image();
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = imgSrc;
+                });
+                imgEl.src = imgSrc;
+                placeholderEl.style.display = 'none';
+                return true;
             } catch (err) {
-                console.error('基础文本加载失败：', err);
-                document.getElementById('main-title').textContent = '主标题';
-                document.getElementById('introduction').textContent = '这里是介绍文本，可修改introduction.txt文件内容';
-                document.getElementById('action-btn').textContent = '点击查看内容';
+                placeholderEl.textContent = `图片加载失败(${imgSrc})`;
+                console.error(`图片加载失败: ${imgSrc}`, err);
+                return false;
             }
-        };
-
-        // 2. 按钮点击事件：隐藏初始界面，逐个加载并显示图文
-        document.getElementById('action-btn').addEventListener('click', async function() {
-            const initialContainer = document.getElementById('initial-container');
-            const loadingTip = document.getElementById('loading-tip');
-            const gallery = document.getElementById('content-gallery');
-
-            // 显示加载提示
-            loadingTip.style.display = 'block';
-            // 隐藏初始界面（加过渡动画）
-            initialContainer.classList.add('hidden');
-
-            try {
-                // 清空原有图文内容
-                gallery.innerHTML = '';
-                // 显示图文区域（先展示空容器）
-                gallery.classList.add('show');
-                
-                // 循环逐个加载图文（imageN.webp 对应 N.txt）
-                const maxItems = 10; // 最大加载数量，可按需调整
-                let hasContent = false;
-
-                for (let i = 1; i <= maxItems; i++) {
-                    // 先预检查图片和文本是否存在，避免创建空卡片
-                    let imgExists = false;
-                    let textExists = false;
-                    let textContent = '';
-
-                    // 检查图片是否存在
-                    try {
-                        const imgTest = new Image();
-                        await new Promise((resolve, reject) => {
-                            imgTest.onload = () => { imgExists = true; resolve(); };
-                            imgTest.onerror = reject;
-                            imgTest.src = `image${i}.webp`;
-                        });
-                    } catch (err) {
-                        // 图片不存在，直接跳过当前i，不创建卡片
-                        continue;
-                    }
-
-                    // 检查文本是否存在
-                    try {
-                        const textRes = await fetch(`${i}.txt`);
-                        if (textRes.ok) {
-                            textContent = await textRes.text();
-                            textContent = textContent.trim();
-                            textExists = true;
-                        }
-                    } catch (err) {
-                        // 文本不存在，直接跳过当前i，不创建卡片
-                        continue;
-                    }
-
-                    // 只有图片和文本都存在时，才创建卡片
-                    if (imgExists && textExists) {
-                        // 创建图文卡片（先显示加载占位符）
-                        const card = document.createElement('div');
-                        card.className = 'content-card';
-                        
-                        // 图片加载占位符
-                        const imgPlaceholder = document.createElement('div');
-                        imgPlaceholder.className = 'img-loading-placeholder';
-                        imgPlaceholder.textContent = `图片 ${i} 加载中...`;
-                        card.appendChild(imgPlaceholder);
-                        
-                        // 文本加载占位符
-                        const textPlaceholder = document.createElement('div');
-                        textPlaceholder.className = 'text-loading-placeholder';
-                        textPlaceholder.textContent = `正在加载图片 ${i} 对应的描述文本...`;
-                        card.appendChild(textPlaceholder);
-                        
-                        // 添加到画廊
-                        gallery.appendChild(card);
-
-                        // 加载图片（串行加载，等待当前图片加载完成）
-                        const img = new Image();
-                        img.src = `image${i}.webp`;
-                        img.className = 'content-img';
-                        await new Promise((resolve) => {
-                            img.onload = resolve;
-                            // 图片加载失败的情况已在预检查排除，无需处理error
-                        });
-
-                        // 替换占位符为实际内容
-                        card.removeChild(imgPlaceholder);
-                        card.insertBefore(img, card.firstChild);
-                        
-                        card.removeChild(textPlaceholder);
-                        const textDiv = document.createElement('div');
-                        textDiv.className = 'content-text';
-                        textDiv.textContent = textContent;
-                        card.appendChild(textDiv);
-
-                        // 显示加载完成的内容
-                        img.style.display = 'block';
-                        textDiv.style.display = 'block';
-
-                        // 给图片绑定双击全屏事件
-                        img.addEventListener('dblclick', function() {
-                            showFullscreen(img.src, textContent);
-                        });
-
-                        hasContent = true;
-                    }
-                }
-
-                // 隐藏整体加载提示
-                loadingTip.style.display = 'none';
-                
-                // 无图文内容时的提示
-                if (!hasContent) {
-                    gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; color: #666;">暂无可用的图文内容</div>`;
-                }
-            } catch (err) {
-                console.error('图文加载失败：', err);
-                loadingTip.style.display = 'none';
-                gallery.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; font-size: 1.5rem; color: #666;">加载失败，请检查文件是否存在</div>`;
-            }
-        });
-
-        // 3. 全屏展示图片函数
-        function showFullscreen(imgSrc, textContent) {
-            const fullscreenContainer = document.getElementById('img-fullscreen-container');
-            const fullscreenImg = document.getElementById('fullscreen-img');
-            const fullscreenText = document.getElementById('fullscreen-text');
-            
-            // 设置全屏图片和文本
-            fullscreenImg.src = imgSrc;
-            fullscreenText.textContent = textContent;
-            
-            // 显示全屏容器
-            fullscreenContainer.style.display = 'flex';
-            
-            // 禁止页面滚动
-            document.body.style.overflow = 'hidden';
         }
 
-        // 4. 关闭全屏事件
-        document.getElementById('close-fullscreen').addEventListener('click', function() {
-            const fullscreenContainer = document.getElementById('img-fullscreen-container');
-            fullscreenContainer.style.display = 'none';
-            
-            // 恢复页面滚动
-            document.body.style.overflow = 'auto';
-        });
+        // 初始化4张全屏图片 - 单列纵向排列，完整显示无裁剪
+        async function initFullscreenImgs() {
+            imgContainer.innerHTML = '';
+            // 循环生成4张图片的占位符和图片元素
+            for (let i = 1; i <= 4; i++) {
+                // 图片包裹层（实现长边全屏+居中）
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'fullscreen-img-wrap';
 
-        // 5. 点击全屏容器空白处关闭（可选）
-        document.getElementById('img-fullscreen-container').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = 'auto';
+                // 加载占位符（深色背景，和图片区统一）
+                const placeholder = document.createElement('div');
+                placeholder.className = 'img-placeholder';
+                placeholder.textContent = `image${i}.webp 加载中...`;
+                placeholder.id = `imgPlaceholder${i}`;
+
+                // 全屏图片元素（核心：完整显示）
+                const img = document.createElement('img');
+                img.className = 'fullscreen-img';
+                img.alt = `活动图片${i}`;
+                img.id = `fullscreenImg${i}`;
+
+                // 组装并添加到容器
+                imgWrap.appendChild(placeholder);
+                imgWrap.appendChild(img);
+                imgContainer.appendChild(imgWrap);
+
+                // 串行加载图片，保证顺序，解决读取失败
+                await loadImage(
+                    `image${i}.webp`,
+                    document.getElementById(`imgPlaceholder${i}`),
+                    document.getElementById(`fullscreenImg${i}`)
+                );
             }
+        }
+
+        // 初始化16个红包
+        function initPackets() {
+            packetContainer.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                const card = document.createElement('div');
+                card.className = 'packet-card';
+
+                // 红包正面
+                const front = document.createElement('div');
+                front.className = 'packet-front';
+                front.textContent = '红包';
+
+                // 红包背面（点击时按顺序赋值）
+                const back = document.createElement('div');
+                back.className = 'packet-back';
+                back.textContent = '';
+
+                card.appendChild(front);
+                card.appendChild(back);
+                card.addEventListener('click', handlePacketClick);
+                packetContainer.appendChild(card);
+            }
+            // 重置抽奖状态
+            remainingChances = 5;
+            clickIndex = 0;
+            updateChanceTip();
+            enableAllPackets();
+        }
+
+        // 红包点击处理：5次机会，按顺序展示文本
+        function handlePacketClick(e) {
+            const card = e.currentTarget;
+            const backElement = card.querySelector('.packet-back');
+            // 跳过已翻转/禁用的红包
+            if (card.classList.contains('flipped') || card.classList.contains('disabled')) return;
+
+            if (remainingChances > 0) {
+                backElement.textContent = packetTexts[clickIndex];
+                card.classList.add('flipped');
+                remainingChances--;
+                clickIndex++;
+                updateChanceTip();
+
+                // 5次抽完，显示兑换码弹窗+禁用剩余红包
+                if (remainingChances === 0) {
+                    disableAllUnflippedPackets();
+                    setTimeout(() => {
+                        rewardModal.style.display = 'flex';
+                    }, 800);
+                }
+            }
+        }
+
+        // 更新剩余抽奖次数提示
+        function updateChanceTip() {
+            chanceTip.textContent = `剩余抽奖次数：${remainingChances}`;
+        }
+
+        // 启用所有红包（重置时用）
+        function enableAllPackets() {
+            document.querySelectorAll('.packet-card').forEach(card => {
+                card.classList.remove('disabled', 'flipped');
+                card.querySelector('.packet-back').textContent = '';
+            });
+        }
+
+        // 禁用未翻转的红包（抽完5次后）
+        function disableAllUnflippedPackets() {
+            document.querySelectorAll('.packet-card').forEach(card => {
+                if (!card.classList.contains('flipped')) card.classList.add('disabled');
+            });
+        }
+
+        // 点击了解更多：隐藏按钮，显示抽奖区并平滑滚动
+        function switchToLottery() {
+            moreBtn.classList.add('hidden');
+            lotterySection.classList.add('show');
+            initPackets();
+            // 平滑滚动到抽奖区顶部，体验更流畅
+            lotterySection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 弹窗关闭事件（点击确认/遮罩层都可关闭）
+        modalBtn.addEventListener('click', () => {
+            rewardModal.style.display = 'none';
+        });
+        rewardModal.addEventListener('click', (e) => {
+            if (e.target === rewardModal) rewardModal.style.display = 'none';
         });
 
-        // 6. ESC键关闭全屏
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const fullscreenContainer = document.getElementById('img-fullscreen-container');
-                if (fullscreenContainer.style.display === 'flex') {
-                    fullscreenContainer.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }
+        // 点击了解更多按钮事件
+        moreBtn.addEventListener('click', switchToLottery);
+
+        // 页面加载初始化：先加载图片，再隐藏加载提示
+        window.addEventListener('load', async () => {
+            loadingTip.style.display = 'block';
+            try {
+                await initFullscreenImgs(); // 加载4张.webp图片，解决读取失败
+            } catch (err) {
+                console.error('图片区初始化失败', err);
+            } finally {
+                loadingTip.style.display = 'none';
             }
         });
     </script>
