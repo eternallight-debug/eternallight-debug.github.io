@@ -3,271 +3,99 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>留言板</title>
+<title>欢迎来到我的小工具箱</title>
 <style>
-* {margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, sans-serif;}
-body {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4eaf5 100%);
-  min-height: 100vh;
-  padding: 20px 16px 120px 16px;
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto}
+html,body{height:100%}
+body{
+  background: #277376;
+  overflow-x:hidden;
+  color:#fff;
 }
-#messages {
-  max-width: 700px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+#particles{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  z-index:1;
 }
-.msg {
-  background: rgba(255,255,255,0.85);
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  animation: fadeIn 0.3s ease;
-  position: relative;
+.wrap{
+  position:relative;z-index:2;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:2rem 1rem;
 }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.container{max-width:520px;width:100%}
+
+.title{
+  text-align:center;
+  font-size:32px;
+  margin-bottom:2rem;
+  text-shadow:0 0 12px rgba(255,255,255,0.3);
 }
-.msg .content {
-  font-size: 15px;
-  line-height: 1.6;
-  color: #222;
-  margin-bottom: 6px;
-  white-space: pre-wrap;
+
+.tool{
+  display:block;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.2);
+  color:#fff;
+  text-decoration:none;
+  text-align:center;
+  padding:20px;
+  border-radius:16px;
+  margin-bottom:14px;
+  font-size:16px;
+  font-weight:500;
+  transition:all 0.3s ease;
 }
-.msg .time {
-  font-size: 12px;
-  color: #888;
+.tool:hover{
+  transform:scale(1.05);
+  background:rgba(255,255,255,0.14);
+  border-color:rgba(255,255,255,0.4);
+  box-shadow:0 8px 30px rgba(0,0,0,0.2);
 }
-.msg .del {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  font-size: 12px;
-  color: #ff4444;
-  background: rgba(0,0,0,0.03);
-  padding: 3px 8px;
-  border-radius: 999px;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.msg:hover .del { opacity: 0.6; }
-.float-group {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 999;
-}
-.float-btn {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  color: white;
-  display: grid;
-  place-items: center;
-  font-size: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-.float-btn:hover { transform: scale(1.08); }
-.btn-add { background: #4f46e5; }
-.btn-del { background: #f59e0b; }
-.btn-clear { background: #ef4444; }
-.btn-save { background: #10b981; }
-.panel {
-  /* 只改这里：居中显示，其他完全不变 */
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 280px;
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  z-index: 998;
-  display: none;
-}
-.panel.show { display: block; animation: pop 0.2s ease; }
-@keyframes pop {
-  from { opacity: 0; transform: scale(0.92) translate(-50%, -50%); }
-  to { opacity: 1; transform: scale(1) translate(-50%, -50%); }
-}
-.panel h4 { margin-bottom: 12px; font-size: 16px; }
-.panel input, .panel textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-.panel textarea { resize: vertical; min-height: 80px; }
-.panel button {
-  width: 100%;
-  padding: 10px;
-  background: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+
+.footer{
+  margin-top:2.5rem;
+  text-align:center;
+  color:rgba(255,255,255,0.6);
+  font-size:14px;
 }
 </style>
 </head>
 <body>
-<div id="messages">加载中...</div>
 
-<div class="float-group">
-  <div class="float-btn btn-add" onclick="togglePanel()">✏️</div>
-  <div class="float-btn btn-del" onclick="handleDeleteOne()">🗑️</div>
-  <div class="float-btn btn-clear" onclick="handleClearAll()">🧹</div>
-  <!-- 第4个悬浮按钮：保存到本地 -->
-  <div class="float-btn btn-save" onclick="saveAllToLocal()">💾</div>
+<div id="particles"></div>
+
+<div class="wrap">
+  <div class="container">
+    <h2 class="title">Hello 啊</h2>
+
+    <a href="图片马赛克拼接工具.html" class="tool">图片马赛克拼接</a>
+    <a href="立体环绕音处理器.html" class="tool">立体环绕音处理</a>
+    <a href="留言板.html" class="tool">留言板</a>
+
+    <div class="footer">
+      在线小工具集合<br>持续更新中 · 静态页面无后台
+    </div>
+  </div>
 </div>
 
-<div class="panel" id="addPanel">
-  <h4>发表留言</h4>
-  <textarea id="content" placeholder="写下你的留言…"></textarea>
-  <button onclick="sendMsg()">提交留言</button>
-</div>
-
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <script>
-const UPSTASH_URL = "https://driven-earwig-101935.upstash.io";
-const TOKEN = "gQAAAAAAAY4vAAIocDIyMTk5N2I2ZWY1NmU0NGUwOGU2YzY2NDljM2Y1ODFjNnAyMTAxOTM1";
-const KEY = "msgs";
-let delMode = false;
-
-function togglePanel() {
-  document.getElementById("addPanel").classList.toggle("show");
-}
-
-function getCurrentPassword() {
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`;
-}
-
-async function load() {
-  const el = document.getElementById("messages");
-  el.innerHTML = "加载中…";
-  try {
-    const r = await fetch(`${UPSTASH_URL}/get/${KEY}`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }
-    });
-    const d = await r.json();
-    const ms = d.result ? JSON.parse(d.result) : [];
-    el.innerHTML = "";
-    ms.forEach((m, i) => {
-      const div = document.createElement("div");
-      div.className = "msg";
-      div.innerHTML = `
-        <div class="content">${m.content}</div>
-        <div class="time">${new Date(m.time).toLocaleString()}</div>
-        <div class="del" onclick="delOne(${i})">删</div>
-      `;
-      el.appendChild(div);
-    });
-  } catch (e) {
-    el.innerHTML = "加载失败（请部署到GitHub Pages使用）";
+particlesJS("particles",{
+  particles:{
+    number:{value:70},
+    color:{value:"#ffffff"},
+    opacity:{value:0.4},
+    size:{value:2.5},
+    line_linked:{enable:true,color:"#ffffff",opacity:0.15,width:1},
+    move:{speed:0.7}
   }
-}
-
-async function sendMsg() {
-  const content = document.getElementById("content").value.trim();
-  if (!content) return alert("请输入留言内容");
-  try {
-    const r = await fetch(`${UPSTASH_URL}/get/${KEY}`, { headers: { Authorization: `Bearer ${TOKEN}` } });
-    const d = await r.json();
-    const ms = d.result ? JSON.parse(d.result) : [];
-    ms.unshift({ content, time: new Date().toISOString() });
-    await fetch(`${UPSTASH_URL}/set/${KEY}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify(ms)
-    });
-    alert("发布成功！");
-    document.getElementById("content").value = "";
-    togglePanel();
-    load();
-  } catch (e) {
-    alert("提交失败");
-  }
-}
-
-function handleDeleteOne() {
-  const pwd = prompt("请输入管理密码");
-  if (pwd !== getCurrentPassword()) return alert("密码错误");
-  delMode = true;
-  alert("密码正确，点击留言上的删除按钮即可");
-}
-
-async function delOne(idx) {
-  if (!delMode) return;
-  const r = await fetch(`${UPSTASH_URL}/get/${KEY}`, { headers: { Authorization: `Bearer ${TOKEN}` } });
-  const d = await r.json();
-  const ms = d.result ? JSON.parse(d.result) : [];
-  ms.splice(idx, 1);
-  await fetch(`${UPSTASH_URL}/set/${KEY}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify(ms)
-  });
-  alert("已删除");
-  delMode = false;
-  load();
-}
-
-async function handleClearAll() {
-  const pwd = prompt("请输入清空密码");
-  if (pwd !== getCurrentPassword()) return alert("密码错误");
-  await fetch(`${UPSTASH_URL}/set/${KEY}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify([])
-  });
-  alert("已清空全部留言");
-  load();
-}
-
-// 新增：保存所有留言到本地文件
-async function saveAllToLocal() {
-  try {
-    const r = await fetch(`${UPSTASH_URL}/get/${KEY}`, { headers: { Authorization: `Bearer ${TOKEN}` } });
-    const d = await r.json();
-    const ms = d.result ? JSON.parse(d.result) : [];
-    
-    if (ms.length === 0) {
-      alert("暂无留言可保存");
-      return;
-    }
-
-    let text = "========== 所有留言 ==========\n\n";
-    ms.forEach((m, i) => {
-      text += `【${i+1}】${new Date(m.time).toLocaleString()}\n`;
-      text += `${m.content}\n\n`;
-    });
-
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "留言记录_" + new Date().toLocaleDateString() + ".txt";
-    a.click();
-    URL.revokeObjectURL(url);
-    alert("已保存所有留言到本地！");
-  } catch (e) {
-    alert("保存失败");
-  }
-}
-
-load();
+});
 </script>
+
 </body>
 </html>
